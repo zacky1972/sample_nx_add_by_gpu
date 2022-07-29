@@ -1,10 +1,53 @@
 #include <stdbool.h>
 #include <erl_nif.h>
 
+#ifdef METAL
+#include <string.h>
+#include <stdio.h>
+#include "metal/wrap_add.h"
+#endif
+
 #ifdef CUDA
 #include <string.h>
 #include "cuda/vectorAdd.h"
 #endif
+
+static ERL_NIF_TERM init_metal_nif(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
+{
+    if(__builtin_expect(argc != 1, false)) {
+        return enif_make_badarg(env);
+    }
+#ifdef METAL
+    bool ret = true;
+    const char *metal_error = "Metal Error: ";
+    char error[MAXBUFLEN];
+    memset(error, 0, MAXBUFLEN);
+
+    unsigned len;
+    if(__builtin_expect(!enif_get_list_length(env, argv[0], &len), false)) {
+        return enif_make_badarg(env);
+    }
+    char *metal_src = enif_alloc(len);
+    if(__builtin_expect(metal_src == NULL, false)) {
+        return enif_make_badarg(env);
+    }
+    if(__builtin_expect(!enif_get_string(env, argv[0], metal_src, len, ERL_NIF_LATIN1), false)) {
+        return enif_make_badarg(env);
+    }
+    ret = init_metal(metal_src, error);
+    enif_free(metal_src);
+    if(ret) {
+        return enif_make_atom(env, "ok");
+    } else {
+        char ret_error[MAXBUFLEN + strlen(metal_error)];
+        memset(ret_error, 0, MAXBUFLEN + strlen(metal_error));
+        snprintf(ret_error, MAXBUFLEN + strlen(metal_error), "%s%s", metal_error, error);
+        return enif_make_tuple2(env, enif_make_atom(env, "error"), enif_make_string(env, ret_error, ERL_NIF_LATIN1));
+    }
+#else
+    return enif_make_atom(env, "ok");
+#endif
+}
 
 static ERL_NIF_TERM add_s32_gpu_nif(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 {
@@ -37,7 +80,19 @@ static ERL_NIF_TERM add_s32_gpu_nif(ErlNifEnv *env, int argc, const ERL_NIF_TERM
     }
     int32_t *out = (int32_t *)out_data.data;
 
-#ifdef CUDA
+#ifdef METAL
+    const char *metal_error = "Metal Error: ";
+    char error[MAXBUFLEN];
+    memset(error, 0, MAXBUFLEN);
+
+    if(__builtin_expect(!add_s32_metal(in1, in2, out, vec_size, error), false)) {
+        size_t len = MAXBUFLEN + strlen(metal_error);
+        char ret_error[len];
+        memset(ret_error, 0, len);
+        snprintf(ret_error, len, "%s%s", metal_error, error);
+        return enif_raise_exception(env, enif_make_string(env, ret_error, ERL_NIF_LATIN1));
+    }
+#elif CUDA
     const char *cuda_error = "CUDA Error: ";
     char error[MAXBUFLEN];
     memset(error, 0, MAXBUFLEN);
@@ -98,6 +153,7 @@ static ERL_NIF_TERM add_s32_cpu_nif(ErlNifEnv *env, int argc, const ERL_NIF_TERM
 
 static ErlNifFunc nif_funcs [] =
 {
+    {"init_metal_nif", 1, init_metal_nif},
     {"add_s32_gpu_nif", 4, add_s32_gpu_nif},
     {"add_s32_cpu_nif", 4, add_s32_cpu_nif}
 };
