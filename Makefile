@@ -4,6 +4,21 @@ PRIV = $(MIX_APP_PATH)/priv
 BUILD = $(MIX_APP_PATH)/obj
 NIF = $(PRIV)/libnif.so
 
+ifeq ($(shell uname -s),Linux)
+ifeq ($(NVCC),)
+NVCC = $(shell which nvcc)
+ifeq ($(NVCC),)
+$(error Could not find nvcc. set path to nvcc)
+endif
+endif
+ifneq ($(NVCC),)
+CUDA_PATH = $(shell elixir --eval "\"$(NVCC)\" |> Path.split() |> Enum.drop(-2) |> Path.join() |> IO.puts")
+CFLAGS += -DCUDA
+CUFLAGS += -DCUDA -I$(CUDA_PATH)/include --compiler-options -fPIC
+CULDFLAGS += -L$(CUDA_PATH)/lib64
+endif
+endif
+
 ifeq ($(CROSSCOMPILE),)
 ifeq ($(shell uname -s),Linux)
 LDFLAGS += -fPIC -shared
@@ -34,6 +49,10 @@ NIF_SRC_DIR = nif_src
 C_SRC = $(NIF_SRC_DIR)/libnif.c
 C_OBJ = $(C_SRC:$(NIF_SRC_DIR)/%.c=$(BUILD)/%.o)
 
+CUDA_SRC_DIR = $(NIF_SRC_DIR)/cuda
+CU_SRC = $(CUDA_SRC_DIR)/vectorAdd.cu
+CU_OBJ = $(CU_SRC:$(CUDA_SRC_DIR)/%.cu=$(BUILD)/%.o)
+
 all: $(PRIV) $(BUILD) $(NIF)
 
 $(PRIV) $(BUILD):
@@ -43,9 +62,21 @@ $(BUILD)/%.o: $(NIF_SRC_DIR)/%.c
 	@echo " CC $(notdir $@)"
 	$(CC) -c $(ERL_CFLAGS) $(CFLAGS) -o $@ $<
 
+ifneq ($(NVCC),)
+$(BUILD)/%.o: $(CUDA_SRC_DIR)/%.cu
+	@echo " NVCC $(notdir $@)"
+	$(NVCC) $(CUFLAGS) -c -o $@ $<
+endif
+
+ifneq ($(NVCC),)
+$(NIF): $(C_OBJ) $(CU_OBJ)
+	@echo " LD $(notdir $@)"
+	$(NVCC) -o $@ $(ERL_LDFLAGS) $(CULDFLAGS) --compiler-options $(LDFLAGS) $^
+else
 $(NIF): $(C_OBJ)
 	@echo " LD $(notdir $@)"
 	$(CC) -o $@ $(ERL_LDFLAGS) $(LDFLAGS) $^
+endif
 
 clean:
 	$(RM) $(NIF) $(C_OBJ)
