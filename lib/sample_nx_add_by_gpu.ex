@@ -1,6 +1,6 @@
 defmodule SampleNxAddByGpu do
   @moduledoc """
-  Documentation for `SampleNxAddByGpu`.
+  A sample program that connects Nx and GPU (CUDA or Metal).
   """
 
   @doc """

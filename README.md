@@ -1,6 +1,6 @@
 # SampleNxAddByGpu
 
-**TODO: Add description**
+A sample program that connects Nx and GPU (CUDA or Metal).
 
 ## Installation
 
