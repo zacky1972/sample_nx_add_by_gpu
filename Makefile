@@ -79,4 +79,4 @@ $(NIF): $(C_OBJ)
 endif
 
 clean:
-	$(RM) $(NIF) $(C_OBJ)
+	$(RM) $(NIF) $(C_OBJ) $(CU_OBJ)
