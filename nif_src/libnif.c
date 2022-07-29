@@ -1,6 +1,11 @@
 #include <stdbool.h>
 #include <erl_nif.h>
 
+#ifdef CUDA
+#include <string.h>
+#include "cuda/vectorAdd.h"
+#endif
+
 static ERL_NIF_TERM add_s32_gpu_nif(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 {
     if(__builtin_expect(argc != 4, false)) {
@@ -32,9 +37,23 @@ static ERL_NIF_TERM add_s32_gpu_nif(ErlNifEnv *env, int argc, const ERL_NIF_TERM
     }
     int32_t *out = (int32_t *)out_data.data;
 
+#ifdef CUDA
+    const char *cuda_error = "CUDA Error: ";
+    char error[MAXBUFLEN];
+    memset(error, 0, MAXBUFLEN);
+
+    if(__builtin_expect(!add_s32_cuda(in1, in2, out, vec_size, error), false)) {
+        size_t len = MAXBUFLEN + strlen(cuda_error);
+        char ret_error[len];
+        memset(ret_error, 0, len);
+        snprintf(ret_error, len, "%s%s", cuda_error, error);
+        return enif_raise_exception(env, enif_make_string(env, ret_error, ERL_NIF_LATIN1));
+    }
+#else
     for(ErlNifUInt64 i = 0; i < vec_size; i++) {
         out[i] = in1[i] + in2[i];
     }
+#endif
 
     return enif_make_binary(env, &out_data);
 }
