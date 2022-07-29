@@ -1,13 +1,23 @@
 defmodule SampleNxAddByGpu.MixProject do
   use Mix.Project
 
+  @version "0.1.0"
+  @source_url "https://github.com/zacky1972/sample_nx_add_by_gpu"
+  @module_name "SampleNxAddByGpu"
+
   def project do
     [
       app: :sample_nx_add_by_gpu,
-      version: "0.1.0",
+      version: @version,
       elixir: "~> 1.13",
       start_permanent: Mix.env() == :prod,
-      deps: deps()
+      deps: deps(),
+      name: @module_name,
+      source_url: @source_url,
+      docs: [
+        main: @module_name,
+        extras: ["README.md"]
+      ]
     ]
   end
 
@@ -23,6 +33,7 @@ defmodule SampleNxAddByGpu.MixProject do
     [
       # {:dep_from_hexpm, "~> 0.3.0"},
       # {:dep_from_git, git: "https://github.com/elixir-lang/my_dep.git", tag: "0.1.0"}
+      {:ex_doc, "~> 0.28", only: :dev, runtime: false}
     ]
   end
 end
