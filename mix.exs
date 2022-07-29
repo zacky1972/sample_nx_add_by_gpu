@@ -17,7 +17,9 @@ defmodule SampleNxAddByGpu.MixProject do
       docs: [
         main: @module_name,
         extras: ["README.md"]
-      ]
+      ],
+      compilers: [:elixir_make] ++ Mix.compilers(),
+      package: package()
     ]
   end
 
@@ -33,7 +35,27 @@ defmodule SampleNxAddByGpu.MixProject do
     [
       # {:dep_from_hexpm, "~> 0.3.0"},
       # {:dep_from_git, git: "https://github.com/elixir-lang/my_dep.git", tag: "0.1.0"}
-      {:ex_doc, "~> 0.28", only: :dev, runtime: false}
+      {:ex_doc, "~> 0.28", only: :dev, runtime: false},
+      {:elixir_make, "~> 0.6", runtime: false}
+    ]
+  end
+
+  defp package do
+    [
+      files: [
+        "lib",
+        "LICENSE",
+        "mix.exs",
+        "README.md",
+        "Makefile",
+        "nif_src/*.c",
+        "nif_src/*.h",
+        "nif_src/cuda/*.h",
+        "nif_src/cuda/*.cu",
+        "nif_src/metal/*.h",
+        "nif_src/metal/*.m",
+        "nif_src/metal/*.metal"
+      ]
     ]
   end
 end
