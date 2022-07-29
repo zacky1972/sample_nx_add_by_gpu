@@ -5,7 +5,21 @@ defmodule SampleNxAddByGpu do
   A sample program that connects Nx and GPU (CUDA or Metal).
   """
 
-  @on_load :load_nif
+  @on_load :init
+
+  @doc false
+  def init do
+    case load_nif() do
+      :ok ->
+        case init_metal("nif_src/metal/add.metal") do
+          :ok -> :ok
+          {:error, char_list} -> {:error, List.to_string(char_list)}
+        end
+
+      _ ->
+        :error
+    end
+  end
 
   @doc false
   def load_nif do
@@ -17,6 +31,17 @@ defmodule SampleNxAddByGpu do
       {:error, reason} -> Logger.error("Failed to load NIF: #{inspect(reason)}")
     end
   end
+
+  @doc false
+  def init_metal(metal_src) do
+    metal_src
+    |> File.read!()
+    |> String.to_charlist()
+    |> init_metal_nif()
+  end
+
+  @doc false
+  def init_metal_nif(_metal_src), do: exit(:nif_not_loaded)
 
   @doc """
   Add two tensors with signed 32bit integer.

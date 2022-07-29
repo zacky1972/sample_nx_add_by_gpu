@@ -4,6 +4,10 @@ PRIV = $(MIX_APP_PATH)/priv
 BUILD = $(MIX_APP_PATH)/obj
 NIF = $(PRIV)/libnif.so
 
+ifeq ($(shell uname -s),Darwin)
+CFLAGS += -DMETAL
+endif
+
 ifeq ($(shell uname -s),Linux)
 ifeq ($(NVCC),)
 NVCC = $(shell which nvcc)
@@ -53,6 +57,11 @@ CUDA_SRC_DIR = $(NIF_SRC_DIR)/cuda
 CU_SRC = $(CUDA_SRC_DIR)/vectorAdd.cu
 CU_OBJ = $(CU_SRC:$(CUDA_SRC_DIR)/%.cu=$(BUILD)/%.o)
 
+METAL_SRC_DIR = $(NIF_SRC_DIR)/metal
+OC_SRC = $(METAL_SRC_DIR)/wrap_add.m $(METAL_SRC_DIR)/MetalAdder.m
+OC_OBJ = $(OC_SRC:$(METAL_SRC_DIR)/%.m=$(BUILD)/%.o)
+
+
 all: $(PRIV) $(BUILD) $(NIF)
 
 $(PRIV) $(BUILD):
@@ -61,6 +70,12 @@ $(PRIV) $(BUILD):
 $(BUILD)/%.o: $(NIF_SRC_DIR)/%.c
 	@echo " CC $(notdir $@)"
 	$(CC) -c $(ERL_CFLAGS) $(CFLAGS) -o $@ $<
+
+ifeq ($(shell uname -s),Darwin)
+$(BUILD)/%.o: $(METAL_SRC_DIR)/%.m
+	@echo " CLANG $(notdir $@)"
+	xcrun clang -c $(OBJC_FLAGS) $(CFLAGS) -o $@ $<
+endif
 
 ifneq ($(NVCC),)
 $(BUILD)/%.o: $(CUDA_SRC_DIR)/%.cu
@@ -73,10 +88,16 @@ $(NIF): $(C_OBJ) $(CU_OBJ)
 	@echo " LD $(notdir $@)"
 	$(NVCC) -o $@ $(ERL_LDFLAGS) $(CULDFLAGS) --compiler-options $(LDFLAGS) $^
 else
+ifeq ($(shell uname -s),Darwin)
+$(NIF): $(C_OBJ) $(OC_OBJ)
+	@echo " LD $(notdir $@)"
+	xcrun clang -o $@ $(ERL_LDFLAGS) $(LDFLAGS) $^
+else
 $(NIF): $(C_OBJ)
 	@echo " LD $(notdir $@)"
 	$(CC) -o $@ $(ERL_LDFLAGS) $(LDFLAGS) $^
 endif
+endif
 
 clean:
-	$(RM) $(NIF) $(C_OBJ) $(CU_OBJ)
+	$(RM) $(NIF) $(C_OBJ) $(CU_OBJ) $(OC_OBJ)
