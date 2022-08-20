@@ -23,7 +23,7 @@ defmodule SampleNxAddByGpu do
 
   @doc false
   def load_nif do
-    nif_file = '#{Application.app_dir(:sample_nx_add_by_gpu, "priv/libnif")}'
+    nif_file = ~c'#{Application.app_dir(:sample_nx_add_by_gpu, "priv/libnif")}'
 
     case :erlang.load_nif(nif_file, 0) do
       :ok -> :ok
