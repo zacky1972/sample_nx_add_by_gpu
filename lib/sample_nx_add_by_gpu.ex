@@ -99,7 +99,7 @@ defmodule SampleNxAddByGpu do
     if Nx.shape(x) == Nx.shape(y) do
       Nx.from_binary(add_sub_sub(Nx.size(x), Nx.shape(x), Nx.to_binary(x), Nx.to_binary(y), type, processor), type)
     else
-      raise RuntimeError, "shape is not much add(#{inspect Nx.shape(x)}, #{inspect Nx.shape(y)})"
+      raise RuntimeError, "shape is not match add(#{inspect Nx.shape(x)}, #{inspect Nx.shape(y)})"
     end
   end
 
