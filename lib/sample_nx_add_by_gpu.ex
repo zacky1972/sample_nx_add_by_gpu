@@ -15,9 +15,6 @@ defmodule SampleNxAddByGpu do
           :ok -> :ok
           {:error, char_list} -> {:error, List.to_string(char_list)}
         end
-
-      _ ->
-        :error
     end
   end
 
@@ -41,7 +38,7 @@ defmodule SampleNxAddByGpu do
   end
 
   @doc false
-  def init_metal_nif(_metal_src), do: exit(:nif_not_loaded)
+  def init_metal_nif(_metal_src), do: :erlang.nif_error(:not_loaded)
 
   @doc """
   Add two tensors with signed 32bit integer.
@@ -120,8 +117,8 @@ defmodule SampleNxAddByGpu do
   end
 
   @doc false
-  def add_s32_gpu_nif(_size, _shape, _binary1, _binary2), do: exit(:nif_not_loaded)
+  def add_s32_gpu_nif(_size, _shape, _binary1, _binary2), do: :erlang.nif_error(:not_loaded)
 
   @doc false
-  def add_s32_cpu_nif(_size, _shape, _binary1, _binary2), do: exit(:nif_not_loaded)
+  def add_s32_cpu_nif(_size, _shape, _binary1, _binary2), do: :erlang.nif_error(:not_loaded)
 end
