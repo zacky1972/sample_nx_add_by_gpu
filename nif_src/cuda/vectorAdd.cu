@@ -21,7 +21,7 @@ bool add_s32_cuda(const int32_t *h_A, const int32_t *h_B, int32_t *h_C, uint64_t
     cudaError_t err = cudaSuccess;
     
     // compute numElements
-    int size = numElements * sizeof(int32_t);
+    uint64_t size = numElements * sizeof(int32_t);
 
     // Verify that allocations succeeded
     if (h_A == NULL || h_B == NULL || h_C == NULL) {
