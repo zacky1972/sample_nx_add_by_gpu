@@ -11,7 +11,7 @@ defmodule SampleNxAddByGpu do
   def init do
     case load_nif() do
       :ok ->
-        case init_metal("nif_src/metal/add.metal") do
+        case init_metal(Application.app_dir(:sample_nx_add_by_gpu, "priv/add.metal")) do
           :ok -> :ok
           {:error, char_list} -> {:error, List.to_string(char_list)}
         end

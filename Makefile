@@ -3,6 +3,7 @@
 PRIV = $(MIX_APP_PATH)/priv
 BUILD = $(MIX_APP_PATH)/obj
 NIF = $(PRIV)/libnif.so
+METAL = $(PRIV)/add.metal
 
 ifeq ($(shell uname -s),Darwin)
 CFLAGS += -DMETAL
@@ -64,10 +65,13 @@ OC_SRC = $(METAL_SRC_DIR)/wrap_add.m $(METAL_SRC_DIR)/MetalAdder.m
 OC_OBJ = $(OC_SRC:$(METAL_SRC_DIR)/%.m=$(BUILD)/%.o)
 
 
-all: $(PRIV) $(BUILD) $(NIF)
+all: $(PRIV) $(BUILD) $(NIF) $(METAL)
 
 $(PRIV) $(BUILD):
 	mkdir -p $@
+
+$(METAL):
+	cp $(NIF_SRC_DIR)/metal/add.metal $(METAL)
 
 $(BUILD)/%.o: $(NIF_SRC_DIR)/%.c
 	@echo " CC $(notdir $@)"
