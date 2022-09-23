@@ -31,7 +31,7 @@ ifeq ($(shell uname -s),Linux)
 LDFLAGS += -fPIC -shared
 CFLAGS += -fPIC
 else # macOS
-LDFLAGS += -undefined dynamic_lookup -dynamiclib
+LDFLAGS += -dynamiclib -flat_namespace -undefined suppress
 endif
 else
 LDFLAGS += -fPIC -shared
@@ -49,6 +49,16 @@ endif
 
 ERL_CFLAGS ?= -I$(ERL_EI_INCLUDE_DIR)
 ERL_LDFLAGS ?= -L$(ERL_EI_LIBDIR)
+
+IPHONEOS_DEPLOYMENT_TARGET ?= 9.0
+IPHONEOS_OPTIONS = -DAPPLE_FRAMEWORK=ON -DIOS_ARCH=$(IPHONEOS_ARCH) \
+		-DIPHONEOS_DEPLOYMENT_TARGET=$(IPHONEOS_DEPLOYMENT_TARGET) 
+
+ifeq ($(MIX_TARGET),ios)
+CC = $(shell xcrun --sdk iphoneos --find clang)
+CFLAGS += -fembed-bitcode -fno-stack-protector -arch arm64 -mios-version-min=$(IPHONEOS_DEPLOYMENT_TARGET) -isysroot $(shell xcrun --sdk iphoneos --show-sdk-platform-path) -target=arm64-apple-ios14.0
+LDFLAGS += -arch arm64 -mios-version-min=$(IPHONEOS_DEPLOYMENT_TARGET) -isysroot $(shell xcrun --sdk iphoneos --show-sdk-platform-path) -target=arm64-apple-ios14.0
+endif
 
 CFLAGS += -std=c11 -O3 -Wall -Wextra -Wno-unused-function -Wno-unused-parameter -Wno-missing-field-initializers
 
@@ -77,10 +87,16 @@ $(BUILD)/%.o: $(NIF_SRC_DIR)/%.c
 	@echo " CC $(notdir $@)"
 	$(CC) -c $(ERL_CFLAGS) $(CFLAGS) -o $@ $<
 
+ifeq ($(MIX_TARGET),ios)
+$(BUILD)/%.o: $(METAL_SRC_DIR)/%.m
+	@echo " CC $(notdir $@)"
+	$(CC) -c $(OBJC_FLAGS) $(CFLAGS) -o $@ $<
+else
 ifeq ($(shell uname -s),Darwin)
 $(BUILD)/%.o: $(METAL_SRC_DIR)/%.m
 	@echo " CLANG $(notdir $@)"
 	xcrun clang -c $(OBJC_FLAGS) $(CFLAGS) -o $@ $<
+endif
 endif
 
 ifneq ($(NVCC),)
@@ -94,14 +110,20 @@ $(NIF): $(C_OBJ) $(CU_OBJ)
 	@echo " LD $(notdir $@)"
 	$(NVCC) -o $@ $(ERL_LDFLAGS) $(CULDFLAGS) --compiler-options $(LDFLAGS) $^
 else
+ifeq ($(MIX_TARGET),ios)
+$(NIF): $(C_OBJ) $(OC_OBJ)
+	@echo " LD $(notdir $@)"
+	$(CC) -o $@ $(ERL_LDFLAGS) $(LDFLAGS) -framework Metal -framework Foundation $^
+else
 ifeq ($(shell uname -s),Darwin)
 $(NIF): $(C_OBJ) $(OC_OBJ)
 	@echo " LD $(notdir $@)"
-	xcrun clang -o $@ $(ERL_LDFLAGS) $(LDFLAGS) $^
+	xcrun clang -o $@ $(ERL_LDFLAGS) $(LDFLAGS) -framework Metal -framework Foundation $^
 else
 $(NIF): $(C_OBJ)
 	@echo " LD $(notdir $@)"
 	$(CC) -o $@ $(ERL_LDFLAGS) $(LDFLAGS) $^
+endif
 endif
 endif
 
