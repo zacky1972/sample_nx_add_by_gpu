@@ -56,8 +56,8 @@ IPHONEOS_OPTIONS = -DAPPLE_FRAMEWORK=ON -DIOS_ARCH=$(IPHONEOS_ARCH) \
 
 ifeq ($(MIX_TARGET),ios)
 CC = $(shell xcrun --sdk iphoneos --find clang)
-CFLAGS += -fembed-bitcode -fno-stack-protector -arch arm64 -mios-version-min=$(IPHONEOS_DEPLOYMENT_TARGET) -isysroot $(shell xcrun --sdk iphoneos --show-sdk-platform-path) -target=arm64-apple-ios14.0
-LDFLAGS += -arch arm64 -mios-version-min=$(IPHONEOS_DEPLOYMENT_TARGET) -isysroot $(shell xcrun --sdk iphoneos --show-sdk-platform-path) -target=arm64-apple-ios14.0
+CFLAGS += -fembed-bitcode -fno-stack-protector -arch arm64 -mios-version-min=$(IPHONEOS_DEPLOYMENT_TARGET) -isysroot $(shell xcrun --sdk iphoneos --show-sdk-path) --target=arm64-apple-ios14.0
+LDFLAGS += -arch arm64 -mios-version-min=$(IPHONEOS_DEPLOYMENT_TARGET) -isysroot $(shell xcrun --sdk iphoneos --show-sdk-path)
 endif
 
 CFLAGS += -std=c11 -O3 -Wall -Wextra -Wno-unused-function -Wno-unused-parameter -Wno-missing-field-initializers
