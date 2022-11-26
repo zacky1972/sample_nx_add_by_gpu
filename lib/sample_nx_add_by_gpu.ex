@@ -104,6 +104,7 @@ defmodule SampleNxAddByGpu do
     try do
       add_s32_sub(size, shape, binary1, binary2, processor)
     rescue
+      e in ArgumentError -> raise e
       e in ErlangError -> raise RuntimeError, message: List.to_string(e.original)
     end
   end
